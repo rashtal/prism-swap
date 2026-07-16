@@ -1,0 +1,60 @@
+name: Build Prism Swap APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unzip project (اگه فایل به‌صورت zip توی ریشه‌ی ریپو آپلود شده)
+        run: |
+          if [ -f cordova-project.zip ]; then
+            unzip -o cordova-project.zip -d .
+            echo "زیپ باز شد"
+          else
+            echo "زیپی پیدا نشد، فرض میکنیم فایل‌ها از قبل باز شدن"
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Cordova CLI
+        run: npm install -g cordova
+
+      - name: Install project dependencies
+        working-directory: cordova-project
+        run: npm install
+
+      - name: Add Android platform
+        working-directory: cordova-project
+        run: cordova platform add android
+
+      - name: Add Tapsell plugin
+        working-directory: cordova-project
+        run: cordova plugin add tapsell-v3-cordova-plugin
+
+      - name: Build APK (debug)
+        working-directory: cordova-project
+        run: cordova build android --debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prism-swap-debug-apk
+          path: cordova-project/platforms/android/app/build/outputs/apk/debug/*.apk

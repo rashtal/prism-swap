@@ -1,0 +1,20 @@
+{
+  "name": "prism-swap",
+  "version": "10.0.0",
+  "displayName": "Prism Swap",
+  "description": "Color-matching puzzle game",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"no test specified\""
+  },
+  "cordova": {
+    "platforms": ["android"],
+    "plugins": {
+      "tapsell-v3-cordova-plugin": {},
+      "cordova-plugin-whitelist": {}
+    }
+  },
+  "devDependencies": {
+    "cordova-android": "^12.0.0"
+  }
+}

@@ -53,22 +53,18 @@ jobs:
         working-directory: cordova-project
         run: cordova platform add android@15.0.0
 
-      - name: Add Tapsell plugin
-        working-directory: cordova-project
-        run: cordova plugin add tapsell-v3-cordova-plugin
-
-      - name: Patch Tapsell plugin for AndroidX compatibility
-        # این پلاگین ۴ ساله آپدیت نشده و از قبل از تغییر CordovaActivity
-        # به AppCompatActivity نوشته شده. چند خط instanceof/cast داخلیش
-        # با نوع جدید کامپایل نمیشن. این خط‌ها اصلاً کد مرده بودن (چون
-        # Activity تبلیغ تپسل همیشه جدا از MainActivity بازیه)، پس این
-        # پچ فقط برای عبور از کامپایلره، رفتار واقعی رو تغییر نمیده.
-        run: |
-          FILE="cordova-project/platforms/android/app/src/main/java/ir/tapsell/sdk/TapsellCordovaInterface.java"
-          sed -i 's/cordova\.getActivity() instanceof TapsellAdActivity/((Object)cordova.getActivity()) instanceof TapsellAdActivity/g' "$FILE"
-          sed -i 's/(TapsellAdActivity)(cordova\.getActivity())/(TapsellAdActivity)(Object)(cordova.getActivity())/g' "$FILE"
-          echo "پچ اعمال شد:"
-          grep -n "TapsellAdActivity" "$FILE" || true
+      # ===== غیرفعال‌شده موقتاً برای تست تفکیکی =====
+      # هدف: بفهمیم مشکل cordova.js/قفل‌شدن بازی از این پلاگین قدیمیه یا نه.
+      # اگه با این ۲ مرحله غیرفعال، مشکل حل شد، یعنی مقصر همینه.
+      # - name: Add Tapsell plugin
+      #   working-directory: cordova-project
+      #   run: cordova plugin add tapsell-v3-cordova-plugin
+      #
+      # - name: Patch Tapsell plugin for AndroidX compatibility
+      #   run: |
+      #     FILE="cordova-project/platforms/android/app/src/main/java/ir/tapsell/sdk/TapsellCordovaInterface.java"
+      #     sed -i 's/cordova\.getActivity() instanceof TapsellAdActivity/((Object)cordova.getActivity()) instanceof TapsellAdActivity/g' "$FILE"
+      #     sed -i 's/(TapsellAdActivity)(cordova\.getActivity())/(TapsellAdActivity)(Object)(cordova.getActivity())/g' "$FILE"
 
       - name: Build APK (debug)
         working-directory: cordova-project
@@ -77,5 +73,5 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: prism-swap-debug-apk
+          name: prism-swap-debug-apk-NOTAPSELL-TEST
           path: cordova-project/platforms/android/app/build/outputs/apk/debug/*.apk

@@ -53,28 +53,15 @@ jobs:
         working-directory: cordova-project
         run: cordova platform add android@15.0.0
 
-      - name: Add Tapsell plugin
+      - name: Add Tapsell Mediation plugin (custom, local)
         working-directory: cordova-project
-        run: cordova plugin add tapsell-v3-cordova-plugin
-
-      - name: Patch Tapsell plugin for AndroidX compatibility
-        # این پلاگین ۴ ساله آپدیت نشده و از قبل از تغییر CordovaActivity
-        # به AppCompatActivity نوشته شده. چند خط instanceof/cast داخلیش
-        # با نوع جدید کامپایل نمیشن. این خط‌ها اصلاً کد مرده بودن (چون
-        # Activity تبلیغ تپسل همیشه جدا از MainActivity بازیه)، پس این
-        # پچ فقط برای عبور از کامپایلره، رفتار واقعی رو تغییر نمیده.
-        run: |
-          FILE="cordova-project/platforms/android/app/src/main/java/ir/tapsell/sdk/TapsellCordovaInterface.java"
-          sed -i 's/cordova\.getActivity() instanceof TapsellAdActivity/((Object)cordova.getActivity()) instanceof TapsellAdActivity/g' "$FILE"
-          sed -i 's/(TapsellAdActivity)(cordova\.getActivity())/(TapsellAdActivity)(Object)(cordova.getActivity())/g' "$FILE"
-          echo "پچ اعمال شد:"
-          grep -n "TapsellAdActivity" "$FILE" || true
+        run: cordova plugin add ./tapsell-mediation-plugin
 
       - name: Build APK (debug)
         working-directory: cordova-project
         run: cordova build android --debug
 
-      - name: Verify cordova.js is actually inside the built APK
+      - name: Verify cordova.js AND Tapsell plugin JS are inside the built APK
         working-directory: cordova-project
         run: |
           APK=$(find platforms/android/app/build/outputs/apk/debug -name "*.apk" | head -1)
@@ -85,6 +72,10 @@ jobs:
           unzip -p "$APK" assets/www/index.html | grep -o '<script[^>]*cordova[^>]*>' || echo "❌❌❌ تگ اسکریپت cordova.js داخل index.html تزریق نشده!"
           echo "--- آیا cordova_plugins.js هست؟ ---"
           unzip -l "$APK" | grep -i "cordova_plugins.js" || echo "❌❌❌ cordova_plugins.js نیست!"
+          echo "--- آیا فایل جاوااسکریپت پلاگین تپسل (tapsellMediation.js) هست؟ ---"
+          unzip -l "$APK" | grep -i "tapsellMediation" || echo "❌❌❌ tapsellMediation.js نیست!"
+          echo "--- آیا کلاس جاوای پلاگین داخل APK کامپایل شده؟ ---"
+          unzip -l "$APK" | grep -i "TapsellMediationPlugin" || echo "❌❌❌ کلاس پلاگین پیدا نشد!"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
